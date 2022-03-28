@@ -1,7 +1,331 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-1 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>  
+    div.padded {  
+      padding-top: 0px;  
+      padding-right: 100px;  
+      padding-bottom: 0.25in;  
+      padding-left: 100px;  
+    }  
+  </style> 
+<title>Amy Jiang, Christopher Thomas  |  CS 184</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+<br />
+<h1 align="middle">Assignment 3: PathTracer</h1>
+    <h2 align="middle">Amy Jiang, Christopher Thomas</h2>
+
+    <div class="padded">
+        <p>
+            Throughout this project, we implemented path tracing algorithms alongside accelerations to tackle the tricky global illumination problem of imitating an accurate depiction of the infinite light bounces in reality.
+            <ul>
+                <li>
+                    Part 1 focused on generating rays in world space from image space pixel coordinates and checking for intersections between the ray and triangle or sphere primitives.
+                </li>
+                <li>
+                    We implemented a speedup for these intersection tests in Part 2 by constructing a Bounding Volume Hierarchy (BVH) that encapsulated objects into axis-aligned bounding boxes. These boxes were created by recursively subdividing themselves in half along the longest directional axis until we achieved a desired maximum number of primitives in each space. We then used this BVH to speed up our intersection algorithm since testing for intersection first with this axis-aligned prism would require fewer operations and trials than iterating through each object in the mesh. If the bounding box intersected, then we could test whether any of the primitives inside it actually intersected.
+                </li>
+                <li>
+                    In Part 3, we implemented the Bidirectional Scattering Distribution Function (BSDF) for a diffuse material and used that to calculate direct illumination via zero- and one-bounce radiance by tracing a ray from the camera to a hit point on the scene and determining the light reflected at the camera from this point using how much light reached the point prior. We did this via a Monte Carlo estimator that checked whether a ray from the hit point going in a direction determined by either uniform hemisphere sampling or importance light sampling intersects a light source, which determines the outgoing light from that hit point.
+                </li>
+                <li>
+                    In Part 4, we extended this implementation to account for indirect illumination by recursively adding on the radiance from successive bounces of light if the ray survived a Russian Roulette terminator with a 35% chance to terminate the current ray.
+                </li>
+                <li>
+                    Part 5 implemented adaptive sampling to minimize the amount of samples required to reduce noise in the image by terminating sampling if the convergence of the pixel’s radiance was within a 95% confidence interval of the samples’ mean.
+                </li>
+            </ul>
+
+        </p>
+        <hr /><hr />
+        <h2 align="middle">Part 1: Ray Generation and Intersection</h2>
+        <p>
+            In order to render images, we have to take a point on the image and convert it to coordinates in the camera space. Once we converted those coordinates into camera space we can generate a ray from the camera location to the point and convert that ray into world space. We can then take these rays in world space and test if they intersect any primitives in the scene. For the purposes of this project, that meant testing whether a given ray intersected any triangles or spheres. For testing triangle intersections in particular, we used the Moller-Trumbore intersection algorithm which takes the vertices of the triangle and uses Cramer’s Rule to find out whether the intersection occurs and where, in terms of the ray’s t time variable as well as in barycentric coordinates of the triangle.
+        </p>
+        <p>
+            Sample images with ray-triangle and ray-sphere intersection generated with normal shading are shown below.
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/1_CBSpheres.png" align="middle" width="480px" />
+                    </td>
+                    <td>
+                        <img src="images/1_cow.png" align="middle" width="480px" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <!--<div align="center">
+        <table style="width=100%">
+            <tr>
+                <td align="middle">
+                    <img src="images/1_CBSpheres" width="480px" />
+                    <figcaption align="middle">Results Caption: my bunny is the bounciest bunny</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>-->
+        <!--<p>Here is an example of how to include a simple formula:</p>
+    <p align="middle"><pre align="middle">a^2 + b^2 = c^2</pre></p>
+    <p>or, alternatively, you can include an SVG image of a LaTex formula.</p>
+    <p>This time it's your job to copy-paste in the rest of the sections :)</p>-->
+        <hr />
+        <h2 align="middle">Part 2: Bounding Volume Hierarchy</h2>
+        <p>
+            The BVH construction algorithm starts by creating a bounding box containing the entire list of primitives. If the number of primitives in the box exceeds the maximum leaf size, it then picks the axis with the largest length and partitions the list of primitives along the middle of the axis so that everything to one side of the middle is in one list of primitives and the other side is another. These two lists form the left and right children of the initial bounding box, and the BVH construction function then calls itself on the new children until the number of primitives in the box is less than or equal to the maximum leaf size.
+        </p>
+        <p>
+            Example complex geometries rendered using BVH acceleration are shown below.
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/2_lucy.png" align="middle" width="480px" />
+                    </td>
+                    <td>
+                        <img src="images/2_maxplanck.png" align="middle" width="480px" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <p>
+            On average the rendering times on scenes took anywhere from 40 to 50 seconds to complete without BVH acceleration; however, with the BVH implemented it took a second or sometimes even less than a tenth of a second to render. The time taken to construct the BVH increased from a few hundredths of a second without BVH acceleration to around a tenth of a second with BVH acceleration. This minute amount of time in preprocessing led to an exponential speedup in rendering time. We can quantify the cause of this massive speedup by looking at the number of intersection tests per ray, which started at about 1500 without BVH acceleration and decreased to the single digits (about 1-2) with the BVH. By avoiding intersection tests with entire clusters of primitives if their bounding box did not intersect with the ray, we were able to drastically reduce the number of calculations and therefore speedup the program.
+        </p>
+
+        <hr />
+        <h2 align="middle">Part 3: Direct Illumination</h2>
+        <p>
+            There are two different implementations of the direct lighting estimation in this part, one with uniform hemisphere sampling and the other with importance sampling of lights. For both, we want to estimate the amount of direct lighting hitting some point and return the total amount of outgoing light from that point in a direction. The difference between the two functions is how we sample directions. In uniform hemisphere estimation, we sample all incoming ray directions with equal probability in a hemisphere around the point and normalize each by the number of samples and the probability of picking each direction, 1/2pi. When we use importance sampling, we only care about sampling directions between the light sources and the point. Area light sources were sampled ns_area_light times and averaged, while point light sources were sampled only once.
+        </p>
+        <p>
+            This was the part we struggled with debugging the most, since it utilized a complex set of moving parts with functions implemented in parts 1, 2, and 3, and it was difficult to narrow down where the bugs were. Through setting breakpoints, adding print statements to check expected values, rendering using normal shading, and running using different command line options, we were able to pinpoint several issues in the BVH intersect function, the triangle intersection function, the raytrace pixel function, and in our handling of world/local coordinates in the direct lighting function and fix them accordingly. We were under the misconception that our previous parts were working as intended since the recommended sanity checks matched the instructor result, but eventually found out that our problems with rendering direct illumination for part 3 almost entirely lay in bugs with previous parts!
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/3_wrong_bunny.png" width="300px" />
+                        <figcaption align="middle">Faulty bunny :(</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <p>
+            Images rendered through both implementations of the direct lighting function are shown below.
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/3_CBspheres_uniform.png" align="middle" width="480px" />
+                        <figcaption align="middle">Uniform hemisphere sampling.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/3_CBspheres_importance.png" align="middle" width="480px" />
+                        <figcaption align="middle">Importance sampling of lights.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <br />
+        <p>
+            Increasing the number of light samples per area light helped to reduce graininess in the image and soften shadows, which can especially be seen in the left shadow of the bunny in the images below.
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/3_CBbunny_1.png" align="middle" width="480px" />
+                        <figcaption align="middle">1 light ray.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/3_CBbunny_4.png" align="middle" width="480px" />
+                        <figcaption align="middle">4 light rays.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/3_CBbunny_16.png" align="middle" width="480px" />
+                        <figcaption align="middle">16 light rays.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/3_CBbunny_64.png" align="middle" width="480px" />
+                        <figcaption align="middle">64 light rays.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            The main difference between these two functions is the noise generated by each. For the uniform hemisphere, a lot of noise is generated by the estimator since the probability we choose a ray not hitting the light source is relatively high and thus the output of the estimator can be darker or brighter than the original scene at lower sample values. Eventually, the estimator will converge around the true radiance, but it will take far greater samples than it does for importance sampling. Importance sampling gives a large bias toward rays in the direction of light sources so when we compute the sum of the rays that point to light sources (which are the only rays that matter in direct illumination) we get a much cleaner and less noisy picture in far fewer samples.
+        </p>
+
+        <hr />
+        <h2 align="middle">Part 4: Global Illumination</h2>
+        <p>
+            We implemented indirect illumination by recursively adding on the radiance from successive light bounces to the radiance we initially calculated with one bounce. To more accurately simulate infinite bounces of light and to speed up the program even at finite light bounces, we computed bounces with a Russian Roulette termination probability of 0.35 to minimize bias in termination timing while also ending recursion at a reasonable time. The initialization of each ray was modified to set the ray’s depth parameter to the max_ray_depth specified by the function arguments. In each call, we would check this depth parameter, which represented the number of bounces left on the ray’s “lifetime.” If the depth was 0, we returned a zero vector (the zero bounce illumination is accounted for separately); if it was 1 or the Russian Roulette told us to end, we returned the one bounce illumination; else, we sampled a new direction, checked for intersection along this new direction, and decremented the ray’s depth and recursively called the function to calculate the radiance of the next bounce if the ray intersected. The radiance returned by successive recursive calls was added to the one bounce radiance and returned by the function. On each bounce of indirect illumination, the radiance was normalized by the probability of sampling that direction and the continuation probability.
+        </p>
+        <p>
+            Sample images rendered with global illumination at 1024 samples are shown below.
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/4_bunny.png" align="middle" width="480px" />
+                    </td>
+                    <td>
+                        <img src="images/4_spheres.png" align="middle" width="480px" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            The light contributions from direct illumination and indirect illumination independently are visualized in the images below, which show that direct illumination only illuminates surfaces that directly reach the light source(s), while indirect illumination is responsible for providing light on surfaces facing away from the light (eg. the underside of the bunny, the ceiling that the wall is on) as well as color bleeding (the color of the side walls is reflected onto the white back wall, ceiling, floor, as well as the bunny itself).
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/4_bunny_direct.png" align="middle" width="480px" />
+                        <figcaption align="middle">Direct illumination only.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/4_bunny_indirect.png" align="middle" width="480px" />
+                        <figcaption align="middle">Indirect illumination only.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            As the maximum ray depth increases, the contributions of indirect illumination become more apparent: shadows become softer and lighter, color bleeding is more apparent and shadows are no longer just grayscale, the corners of the Cornell box become lighter. The difference is most apparent at the first introduction of indirect illumination (from 1 max ray depth to 2).
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/4_bunny_m0.png" align="middle" width="320px" />
+                        <figcaption align="middle">0 ray depth (zero bounce illumination).</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/4_bunny_m1.png" align="middle" width="320px" />
+                        <figcaption align="middle">1 ray depth (direct lighting).</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/4_bunny_m2.png" align="middle" width="320px" />
+                        <figcaption align="middle">2 ray depth.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/4_bunny_m3.png" align="middle" width="320px" />
+                        <figcaption align="middle">3 ray depth.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/4_bunny_m100.png" align="middle" width="320px" />
+                        <figcaption align="middle">100 ray depth.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            Moreover, as we increase the sample rate per pixel, the graininess of the image gradually decreases.
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/4_bunny_s1.png" align="middle" width="250px" />
+                        <figcaption align="middle">1 camera ray sample per pixel.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/4_bunny_s2.png" align="middle" width="250px" />
+                        <figcaption align="middle">2 camera ray samples per pixel.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/4_bunny_s4.png" align="middle" width="250px" />
+                        <figcaption align="middle">4 camera ray samples per pixel.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/4_bunny_s8.png" align="middle" width="250px" />
+                        <figcaption align="middle">8 camera ray samples per pixel.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/4_bunny_s16.png" align="middle" width="250px" />
+                        <figcaption align="middle">16 camera ray samples per pixel.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/4_bunny_s64.png" align="middle" width="250px" />
+                        <figcaption align="middle">64 camera ray samples per pixel.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/4_bunny_s1024.png" align="middle" width="250px" />
+                        <figcaption align="middle">1024 camera ray samples per pixel.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <hr />
+        <h2 align="middle">Part 5: Adaptive Sampling</h2>
+        <p>
+            To speed up the algorithm, we implemented adaptive sampling to terminate the sampling loop before reaching the specified number of samples per pixel if we determined that the pixel’s calculated radiance had converged within a 95% confidence interval of the sample mean. The sum of the sampled radiances and the sampled squared radiances were tracked over each sampling iteration, and every samplePerBatch samples, the mean, variance, and consequently convergence indicator <i>I</i> was calculated. If <i>I</i> was less than or equal to a specified tolerance threshold multiplied by the sample mean, the sampling loop would terminate.
+        </p>
+        <p>
+            Sampling for the bunny image was able to be optimized as shown below.
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/5_bunny.png" align="middle" width="480px" />
+                        <figcaption align="middle">Rendered result.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/5_bunny_rate.png" align="middle" width="480px" />
+                        <figcaption align="middle">Sample rate visualization.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <hr /><hr />
+        <h2 align="middle">Partner Work Reflection</h2>
+        <p>We worked in a form of pair programming at times and at other points used the live share feature on Visual Studio. One of the main benefits to this approach was a general understanding of the code base and realtime team bugfixing but a problem with it was how poorly Live Share worked. After using google suite, teletype, and other live updating tools, this is possibly our least favorite. This entire ordeal taught us to work a little earlier and have more in person time to just walk through problems. We hope next time we will be able to get together more often and find a better way to collaborate than Live Share.</p>
+
+        <hr /><hr />
+        <p><i>This writeup is published at: https://cal-cs184-student.github.io/sp22-project-webpages-p-amyjiang/proj3-1/index.html</i></p>
+        <!--<h2 align="middle">A Few Notes On Webpages</h2>
+    <p>Here are a few problems students have encountered in the past. You will probably encounter these problems at some point, so don't wait until right before the deadline to check that everything is working. Test your website on the instructional machines early!</p>
+    <ul>
+        <li>Your main report page should be called index.html.</li>
+        <li>Be sure to include and turn in all of the other files (such as images) that are linked in your report!</li>
+        <li>
+            Use only <em>relative</em> paths to files, such as <pre>"./images/image.jpg"</pre>
+            Do <em>NOT</em> use absolute paths, such as <pre>"/Users/student/Desktop/image.jpg"</pre>
+        </li>
+        <li>
+            Pay close attention to your filename extensions. Remember that on UNIX systems (such as the instructional machines), capitalization matters. <pre>.png != .jpeg != .jpg != .JPG</pre>
+        </li>
+        <li>Be sure to adjust the permissions on your files so that they are world readable. For more information on this please see this tutorial: <a href="http://www.grymoire.com/Unix/Permissions.html">http://www.grymoire.com/Unix/Permissions.html</a></li>
+        <li>And again, test your website on the instructional machines early!</li>
+    </ul>-->
+    </div>
+</body>
 </html>
+
+
+
+
