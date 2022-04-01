@@ -1,7 +1,232 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>  
+    div.padded {  
+      padding-top: 0px;  
+      padding-right: 100px;  
+      padding-bottom: 0.25in;  
+      padding-left: 100px;  
+    }  
+  </style> 
+<title>Amy Jiang, Christopher Thomas  |  CS 184</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+<br />
+<h1 align="middle">Assignment 3: PathTracer</h1>
+    <h2 align="middle">Amy Jiang, Christopher Thomas</h2>
+
+    <div class="padded">
+        <p>
+            In this project, we extended the ray tracer framework that we built in Project 3-1 to be able to render mirror and glass materials (Part 1) as well as replicate the depth of field effects of a real camera lens (Part 4).
+        </p>
+        <p>In Part 1 we used helper functions in order to cover the two possible bounce scenarios, reflection and refraction, so we can return the correct radiance value for different types of materials in addition to regular diffuse reflections. In order to work around the implementation for glass, we used Schlick’s approximation to get as close as we could to the precise reflection and refraction combination. As for Part 4, we implemented the thin-lens camera model in order to establish depth of field effects for the final renders. Instead of assuming a single ray through a point we use a finite radius lens which causes different points of convergence for rays, creating a blur effect before or behind the focal plane.</p>
+        <p>
+            A few issues we ran into were fairly simple to fix and easy to find. One such instance was using <i>wi</i> instead of <i>wo</i> due to some confusion around which was the “incoming” vector for the purposes of the naming convention and for Schlick’s approximation. This was a simple fix, just a line of code to change. Another problem we ran into was upon calculating the direction between <i>pLens</i> and <i>pFocus</i>, we forgot to convert the ray into the correct coordinate system for later use.
+        </p>
+
+        <hr /><hr />
+
+        <h2 align="middle">Part 1: Mirror and Glass Materials</h2>
+        <p>
+            To render mirror and glass materials, we first implemented helper functions reflect() and refract() that calculated the direction of the <i>wi</i> vector following the equations below, given the <i>wo</i> vector and the index of refraction <i>ior</i> (in the case of refraction).
+        </p>
+
+        <p align="middle">
+            <img src="images/Reflection_eq.png" width="300px" />
+            <figcaption align="middle">Reflection direction equation.</figcaption>
+        </p>
+        <p align="middle">
+            <img src="images/Refraction_eq.png" width="620px" />
+            <figcaption align="middle">Refraction direction equation.</figcaption>
+        </p>
+        <p align="middle">
+            <img src="images/TIR_eq.png" width="220px" />
+            <figcaption align="middle">Condition for total internal reflection.</figcaption>
+        </p>
+
+        <p>In the case of refraction, the sign of <i>wo.z</i> was first checked. If it is positive, the ratio of the old index of refraction to the new index of refraction <i>eta</i> was defined to be the reciprocal of ior; else eta is set equal to ior. If total internal reflection occurred, the refraction function returned without calculating wi. </p>
+
+        <p>
+            Using the reflect() and refract() functions, the mirror (reflection only), refraction, and glass (reflection and refraction) BSDFs were able to be implemented. Although glass rendering involves both refraction and reflection, this is not able to be implemented in the pathtracer since the sample_f() function only returns one ray. Instead, Schlick’s approximation (equations shown below) was used to return a coin-flip possibility <i>R</i> of illumination by either reflection or refraction.
+        </p>
+
+        <p align="middle">
+            <img src="images/Schlicks_eq.png" width="320px" />
+            <figcaption align="middle">Schlick's approximation.</figcaption>
+        </p>
+
+        <p>
+            In each case, the resulting transmittance or reflectance was normalized by the absolute cosine of the wi direction to make sure to cancel out the cosine term in the reflection equation, since reflection and refraction only change the ray direction without causing Lambertian falloff.
+        </p>
+
+        <p>The glass sphere scene with incrementally increasing maximum ray depths is shown below. </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/1_CBspheres_m0.png" width="480px" />
+                        <figcaption align="middle">0 max ray depth.</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/1_CBspheres_m1.png" width="480px" />
+                        <figcaption align="middle">1 max ray depth.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td align="middle">
+                        <img src="images/1_CBspheres_m2.png" width="480px" />
+                        <figcaption align="middle">2 max ray depth.</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/1_CBspheres_m3.png" width="480px" />
+                        <figcaption align="middle">3 max ray depth.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td align="middle">
+                        <img src="images/1_CBspheres_m4.png" width="480px" />
+                        <figcaption align="middle">4 max ray depth.</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/1_CBspheres_m5.png" width="480px" />
+                        <figcaption align="middle">5 max ray depth.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/1_CBspheres_m100.png" width="480px" />
+                        <figcaption align="middle">100 max ray depth.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <p>
+            At zero bounce illumination, only the light source is shown. At one bounce (direct lighting), the spheres themselves save for the glare from the light are completely black, and the areas of the walls that directly receive light from the area light above are illuminated. Since the reflection from the light onto the sphere to the camera is one bounce, the glare is able to be rendered. Similarly, the light to the diffuse Cornell box walls to the camera is also one bounce.
+        </p>
+        <p>
+            At two bounces, we can see the reflection of the front of the Cornell box and the right sphere on the left sphere, but the right sphere itself is still mostly black. The rest of the reflection effects are able to be shown at two or more bounces, since the light needs to bounce off the other surfaces of the Cornell box, reflect on the sphere then to the camera.
+        </p>
+        <p>
+            At three bounces, we can see the refracted image of the back wall and ceiling of the Cornell box in the right sphere, and the shadow of the right sphere is lit near the center instead of completely shadowed. Refraction effects are able to be shown at three or more bounces since the light needs to bounce off the environment (1), to the sphere (2), through the sphere, out the other end (3) and to the camera.
+        </p>
+        <p>At four bounces, the reflection of the right sphere in the left sphere becomes blue instead of black, the bottom of the right sphere is lit up by its own shadow, and there is a circle of light on the right wall. These effects are able to be shown through an additional bounce after the refraction effects described previously. </p>
+        <p>At 5 and 100 bounces, there are no significant new multibounce effects but the reflection of the right sphere on the left sphere is more polished, and the image brightens overall as we near global illumination.</p>
+
+        <!--<p>Here is an example of how to include a simple formula:</p>
+    <p align="middle"><pre align="middle">a^2 + b^2 = c^2</pre></p>
+    <p>or, alternatively, you can include an SVG image of a LaTex formula.</p>
+    <p>This time it's your job to copy-paste in the rest of the sections :)</p>-->
+
+        <hr />
+
+        <h2 align="middle">Part 4: Depth of Field</h2>
+        <p align="middle">
+            <img src="images/4_ref.jpg" width="580px" />
+        </p>
+        <p>
+            Using the given randomly generated R and theta, a random point on the lens pLens was able to be generated. Building off the implementation of the pinhole camera model, the ray direction from the camera through a desired pixel on the sensor (red vector, found previously) was intersected with the focal plane at z=-focalDistance to find the point in focus on the object pFocus. The direction of the desired ray from the lens to the focal plane is found through the difference between pLens and pFocus (blue vector), which is converted from camera to world coordinates and returned as a ray. The position of this ray is at pLens in world coordinates, offset by the position of the camera pos.
+        </p>
+        <p>
+            A pinhole camera model assumes the camera aperture is a point (lens radius of 0) through which a single ray from each point on the object travels. As a result, an image rendered with a pinhole camera model is always in focus. The thin-lens camera model assumes a non-zero, finite lens radius with an infinitely thin lens, where any ray traced from a point on the object through the lens will converge to the same point on the image plane. However, since multiple rays are originating from the same point on the object, they diverge at planes in front of and behind the image plane, resulting in blur at sensor plane distances before or behind the image.
+        </p>
+        <p>
+            The focus stack at four different focal depths with a constant aperture size of 0.3 is shown below. As the focal depth increases, the sharp, in-focus area of the dragon shifts from the front, near its front left (our right) foot, to the tail.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/4_CBdragon_d44.png" width="480px" />
+                        <figcaption align="middle">4.4 focal depth.</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/4_CBdragon_d46.png" width="480px" />
+                        <figcaption align="middle">4.6 focal depth.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td align="middle">
+                        <img src="images/4_CBdragon_d48.png" width="480px" />
+                        <figcaption align="middle">4.8 focal depth.</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/4_CBdragon_d50.png" width="480px" />
+                        <figcaption align="middle">5.0 focal depth.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <p>The same dragon rendered with different aperture sizes at a constant focal depth of 4.8 is shown below. As the lens radius increases, the depth of field decreases and the size of the circle of confusion (the amount of blur) increases.</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/4_CBdragon_b010.png" width="480px" />
+                        <figcaption align="middle">0.1 lens radius.</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/4_CBdragon_b020.png" width="480px" />
+                        <figcaption align="middle">0.2 lens radius.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td align="middle">
+                        <img src="images/4_CBdragon_b040.png" width="480px" />
+                        <figcaption align="middle">0.4 lens radius.</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/4_CBdragon_b070.png" width="480px" />
+                        <figcaption align="middle">0.7 lens radius.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <hr /><hr />
+        <h2 align="middle">Partner Work Reflection</h2>
+
+        <p>For this project we used a lot more in person collaboration since we both had more time and it worked out exceedingly well. Going through each of the problems step by step together, filling in the gaps of knowledge, strengthening weaknesses, making sure code felt clean. One problem with this approach was the planning for the project meetup, planning around schedules while easier was still an exceedingly difficult task. In the future we plan to share schedules prior to planning in order to get a consistent work schedule for projects.</p>
+
+        <hr /><hr />
+              <p><i>This writeup is published at: https://cal-cs184-student.github.io/sp22-project-webpages-p-amyjiang/proj3-2/index.html</i>
+        </p>
+
+        <!--<h2 align="middle">A Few Notes On Webpages</h2>
+    <p>Here are a few problems students have encountered in the past. You will probably encounter these problems at some point, so don't wait until right before the deadline to check that everything is working. Test your website on the instructional machines early!</p>
+    <ul>
+        <li>Your main report page should be called index.html.</li>
+        <li>Be sure to include and turn in all of the other files (such as images) that are linked in your report!</li>
+        <li>
+            Use only <em>relative</em> paths to files, such as <pre>"./images/image.jpg"</pre>
+            Do <em>NOT</em> use absolute paths, such as <pre>"/Users/student/Desktop/image.jpg"</pre>
+        </li>
+        <li>
+            Pay close attention to your filename extensions. Remember that on UNIX systems (such as the instructional machines), capitalization matters. <pre>.png != .jpeg != .jpg != .JPG</pre>
+        </li>
+        <li>Be sure to adjust the permissions on your files so that they are world readable. For more information on this please see this tutorial: <a href="http://www.grymoire.com/Unix/Permissions.html">http://www.grymoire.com/Unix/Permissions.html</a></li>
+        <li>And again, test your website on the instructional machines early!</li>
+    </ul>-->
+    </div>
+</body>
 </html>
+
+
+
+
