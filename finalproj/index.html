@@ -1,0 +1,93 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<style>
+		div.padded {
+			padding-top: 0px;
+			padding-right: 100px;
+			padding-bottom: 0.25in;
+			padding-left: 100px;
+		}
+	</style>
+	<title>Final Project Proposal  |  CS 184, Spring 2022</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+	<br />
+	<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2022</h1>
+	<h2 align="middle">Final Project: Adjustable Liquid Simulation</h2>
+	<h3 align="middle">Amy Jiang, Christopher Thomas, Jeremy Ahn, Jim Kang</h3>
+
+	<div class="padded">
+		<p>
+			<i>
+				2D simulation for various liquids with differing properties that may result in different fluid movement/ interaction with solid objects in simulation. Able to observe how the drop of solid mass affects the fluid movement of different liquids.
+			</i>
+		</p>
+
+		<hr /><hr />
+
+		<h2 align="middle">Problem Description</h2>
+		<p>
+			The problem we are trying to solve is how one can replicate/simulate the fluid movement of different liquids with severally differing properties in computer graphics. For example, while liquids such as water follow Newtonian properties, other liquids such as honey do not. We want to not only be able to simulate their fluid movement, but also simulate how each liquid will interact with a solid mass. The implementation of the fluids will be difficult, but we imagine that implementation of an accurate interaction between fluids and solid mass will be the core difficulty of our project.
+		</p>
+
+		<p>At the moment, we're not sure how to measure the quality of work aside from "it looks accurate" or reasonable compared to expected behavior of the simulated liquids. </p>
+
+		<p>We plan to answer if traditional Navier-Stokes equations can be used for non-Newtonian fluid and if so, what changes we can make. We also want to explore and answer how fluid interacts with solid mass and how our equations will change based on this interaction.</p>
+
+		<p><ol>
+			<li>Plan</li>
+			<ol>
+				<li>Create a liquid simulation in which a user can choose a solid geometry to drop onto a liquid with adjustable viscosity (eg. can simulate water, with low viscosity, or honey, with high viscosity).</li>
+				<li>The final result will include a video result of the interaction between the selected solid and liquid.</li>
+				<li>The performance of the system will be evaluated based on the quality of the simulation in regards to real life physics projected onto a 2D plane.</li>
+				<li>Want to answer how we can represent the physics of liquids using computer technology.</li>
+			</ol>
+			<li>Hopes</li>
+			<ol>
+				<li>Add support for non-Newtonian fluids, such as oobleck (shear thickening) or mayonaise (shear thinning).</li>
+				<li>The final hope is to possibly create a 3D interactive extension with more complex fluids and thus fluid dynamics.</li>
+				<li>The interactive demo will be a run through of the different liquids and moving around the solid within the liquid.</li>
+				<li>The performance of this system will be similar to that of the 2D simulation but should allow for different physics equations.</li>
+			</ol>
+			</ol></p>
+
+		<hr />
+		<h2 align="middle">Schedule</h2>
+
+		<p>
+			<ul>
+				<li>Week of 4/10: Finish Project Proposal</li>
+				<li>Week of 4/17: Begin research, implementation, and Milestone Status Report</li>
+				<li>Week of 4/24: Continue implementation, Complete research, Milestone Status Report Webpage, Slides and Milestone Video</li>
+				<li>Week of 5/1: Finish implementation and Prepare for Final Presentation, Begin Final Project Video and Final Report Webpage</li>
+				<li>Week of 5/8: Finish Final Project Video and Final Report Webpage</li>
+			</ul>
+
+		</p>
+
+		<hr />
+		<h2 align="middle">Resources</h2>
+
+		<p><i>
+			https://google.github.io/liquidfun/
+			<br />
+			https://en.m.wikipedia.org/wiki/Bingham_plastic
+			<br />
+			https://www.cs.ubc.ca/~rbridson/fluidsimulation/fluids_notes.pdf
+			</i></p>
+
+		<hr /><hr />
+		<p>
+			<i>This writeup is published at: https://cal-cs184-student.github.io/sp22-project-webpages-p-amyjiang/finalproj/index.html</i>
+		</p>
+
+	</div>
+</body>
+</html>
+
+
+
+
