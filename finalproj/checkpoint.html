@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<style>
+		div.padded {
+			padding-top: 0px;
+			padding-right: 100px;
+			padding-bottom: 0.25in;
+			padding-left: 100px;
+		}
+	</style>
+	<title>Final Project Checkpoint  |  CS 184, Spring 2022</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+	<br />
+	<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2022</h1>
+	<h2 align="middle">Final Project: Adjustable Liquid Simulation</h2>
+	<h3 align="middle">Amy Jiang, Christopher Thomas, Jeremy Ahn, Jim Kang</h3>
+
+	<div class="padded">
+		<p>
+			<i>
+				2D simulation for various liquids with differing properties that may result in different fluid movement/ interaction with solid objects in simulation. Able to observe how the drop of solid mass affects the fluid movement of different liquids.
+			</i>
+		</p>
+
+		<hr /><hr />
+
+		<h2 align="middle">Project Milestone Update</h2>
+		<p>
+			So far, we have conducted research pertaining to how to model fluids as a grid of particle point masses. To accurately render water (and other liquids), we plan to abide by the following three methods:
+		</p>
+
+		<p>
+			<ul>
+				<li>
+					Procedural water: “animates a physical effect directly instead of simulating the cause
+					of it” (Bridson and Muller-Fischer 59)
+				</li>
+				<li>
+					Heightfield Approximation: “surface is represented as a two dimensional function or heightfield and animated using the 2-d wave equation” (Bridson and Muller-Fischer 59).
+					<ul>
+						<li>
+							We can use this algorithm to quickly and efficiently simulate bodies of water
+							<br />
+							<div align="center">
+								<table style="width=100%">
+									<tr>
+										<td align="middle">
+											<img src="images/heightfield.png" width="520px" />
+										</td>
+									</tr>
+								</table>
+							</div>
+						</li>
+					</ul>
+				</li>
+				<li>
+					Particle Systems: “small amount of water, a splashing fluid, a jet of water, small puddles or runnels” (Bridson and Muller-Fischer 59)
+					<ul>
+						<li>
+							Lennard-Jones Force: Often used in molecular dynamic simulations, we would use this equation to simulate small bodies of water with particles and how each particle interacts with other particles
+							<br />
+							<div align="center">
+								<table style="width=100%">
+									<tr>
+										<td align="middle">
+											<img src="images/lennardjones.png" width="600px" />
+										</td>
+									</tr>
+								</table>
+							</div>
+						</li>
+					</ul>
+				</li>
+			</ul>
+		</p>
+
+		<p>
+			<b>Enforcing Incompressibility:</b>
+			<br />
+			We need to enforce constant density throughout each particle and so we solve a system of nonlinear constraints, with each constraint being a function of the particle’s position and the positions of its neighbors. The density constraint on the ith particle is as follows:
+		</p>
+
+		<div align="center">
+			<table style="width=100%">
+				<tr>
+					<td align="middle">
+						<img src="images/incomp1.png" width="400px" />
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<p>
+			Now, we show how to incorporate our density constraint by trying to find a particle’s position correction that satisfies the constraint:
+		</p>
+
+		<div align="center">
+			<table style="width=100%">
+				<tr>
+					<td align="middle">
+						<img src="images/incomp2.png" width="400px" />
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<p>
+			After applying the SPH recipe for the gradient of a function, the gradient of the constraint function with respect to a particle k is:
+		</p>
+
+		<div align="center">
+			<table style="width=100%">
+				<tr>
+					<td align="middle">
+						<img src="images/incomp3.png" width="400px" />
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<hr />
+		<h2 align="middle">Milestone Video</h2>
+		<p align="middle">
+			<iframe width="560" height="315" src="https://www.youtube.com/embed/xhQ9rkN57KI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=allowfullscreen></iframe>
+		</p>
+		<hr />
+		<h2 align="middle">Milestone Slides</h2>
+
+		<p>
+			Our milestone slides can be viewed at: https://docs.google.com/presentation/d/1q_dWlJLRlYgt0g8Ke_smAWY-mc1adX66-0DXm9qFL3I/edit?usp=sharing
+		</p>
+
+		<hr /><hr />
+		<p>
+			<i>This writeup is published at: https://cal-cs184-student.github.io/sp22-project-webpages-p-amyjiang/finalproj/checkpoint.html </i>
+		</p>
+
+	</div>
+</body>
+</html>
+
+
+
+
