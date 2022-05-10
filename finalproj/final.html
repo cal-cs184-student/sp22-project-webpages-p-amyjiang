@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<style>
+		div.padded {
+			padding-top: 0px;
+			padding-right: 100px;
+			padding-bottom: 0.25in;
+			padding-left: 100px;
+		}
+	</style>
+	<title>Final Project  |  CS 184, Spring 2022</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+	<br />
+	<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2022</h1>
+	<h2 align="middle">Final Project: Liquid Simulation</h2>
+	<h3 align="middle">Amy Jiang, Christopher Thomas, Jeremy Ahn, Jim Kang</h3>
+
+	<div class="padded">
+		<div align="middle">
+			<iframe width="560" height="315" src="https://www.youtube.com/embed/eQn8F3oaRsk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=allowfullscreen></iframe>
+		</div>
+		<hr /><hr />
+
+		<h2 align="middle">Abstract</h2>
+		<p>
+			We ultimately were trying to create a 3D simulation of fluidity. We wanted to see simulated particles interact with one another just as water particles do due to our curiosity in the behavior and physical properties behind water. This could possibly benefit gaming companies or scientists due to the possibility for improved rendering speed and quality of water simulation along with the ability to save time and resources by conducting water related experiments virtually. Over the course of this project, we started off with our project 4 code and incorporated the Height Field approximation to be able to replicate fluidity. Also, we modified our files such as Phong.frag or cloth.cpp, and adjusted the shaders to replicate the texture of water surface.
+		</p>
+		<hr />
+
+		<h2 align="middle">Technical Approach</h2>
+
+		<p>
+			The core component of the project is a simulator for the surface of a fluid. Initially, we built off our cloth simulator code from Project 4, using the point mass mesh to represent the fluid surface instead of a cloth. From here, we implemented the heightfield approximation algorithm to control the z dimension of the point masses. In this algorithm, the height and vertical velocity of each location [i, j] is stored in an array of size N x M. In each simulation loop, the velocity at a point is first updated according to the difference between the surrounding heights and that position’s height, then this velocity is dampened, then the height is updated according to the velocity. This is repeated for every position in the array.
+		</p>
+
+		<p> While implementing this algorithm, our initial results showed the fluid plane oscillating violently and the height of the fluid surface was much larger in magnitude than looked reasonable (higher peaks and deeper troughs). We realized that this was in part due to the foundation of the point mass mesh that the rendering was based off of, and modified the algorithm to not add depth to a separate array with heights but to add it to the pointmasses used to render the array, and not both. In addition, we modified the averaging sequence used in the approximation to 4 times the step size since in the base algorithm, it was assumed the step size was one.</p>
+
+		<h3>Lessons Learned</h3>
+		<p>
+			Over the course of this project, we simultaneously learned a lot about both fluid physics and graphics implementations. Our initial research introduced us to the Navier-Stokes equations, the guiding light of fluid mechanics, as well as multiple ways that these equations were directly implemented or approximated for real-time graphical applications such as direct implementation of the differential equations, Eulerian and Lagrangian viewpoints, particle systems, as well as approximations such as the heightfield approximation that we ultimately decided to use for its computational simplicity. We saw and experienced again first-hand a departure from physically accurate principles for less computationally expensive simulation, a tradeoff we’ve seen previously in the course in, for example, implementing lighting and shading. Finally, from both a physics and graphics perspective, we also learned that no viscosity is a common approximation made since inviscid fluids are much simpler to characterize and model, and implicitly implemented this approximation in our final result.
+		</p>
+		<hr />
+		<h2 align="middle">Results</h2>
+		<div align="center">
+			<table style="width=100%">
+				<tr>
+					<td align="middle">
+						<img src="images/ull.gif" height="250px" />
+						<figcaption align="middle">Full animation.</figcaption>
+					</td>
+					<td align="middle">
+						<img src="images/damped.gif" height="250px" />
+						<figcaption align="middle">Without surface shading rendering.</figcaption>
+					</td>
+					<td align="middle">
+						<img src="images/noDamp.gif" height="250px" />
+						<figcaption align="middle">Approximating without dampening.</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<br />
+		<div align="middle">
+
+			<iframe width="560" height="315" src="https://www.youtube.com/embed/OqvCObRhkcI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen=allowfullscreen></iframe>
+		</div>
+
+		<hr /><hr />
+		<h3>References</h3>
+		<p>
+			<ul>
+				<li><a href="https://www.cs.ubc.ca/~rbridson/fluidsimulation/fluids_notes.pdf">Fluid Simulation (Bridson & Muller-Fischer)</a></li>
+			</ul>
+		</p>
+
+		<h3>Contributions</h3>
+		<p>
+			<ul>
+				<li>
+					Chris Thomas: Implemented fragment shader and heightfield approximation algorithm.
+				</li>
+				<li>
+					Young Hoon: Initialized the shared repository on GitHub using project 4 starter code, researched potential algorithms and methods to include in our implementation, aided in the implementation and debugging process of the height-field approximation with a focus on the buildGrid() function, aided in the fix of the spring problem by modifying the averaging sequence to see the different reactions when modifying the division factor, and aided in the creation of the milestone, final presentations and final report.
+				</li>
+				<li>Amy Jiang: Researched physics of fluid mechanics and its implementation in computer graphics, assisted with debugging, contributed to writing and editing of project milestones and deliverables, built and formatted all website pages. </li>
+				<li>Jeremy Ahn: </li>
+			</ul>
+		</p>
+			
+		<hr /><hr />
+		<p>
+			<i>This writeup is published at: https://cal-cs184-student.github.io/sp22-project-webpages-p-amyjiang/finalproj/final.html </i>
+		</p>
+
+	</div>
+</body>
+</html>
+
+
+
+
